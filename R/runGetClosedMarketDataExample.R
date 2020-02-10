@@ -194,6 +194,8 @@ repeat{
   query.time.end.daily <- Sys.time()
   
   # Delay one day between each call
+  # Note: Should probably schedule this script to run daily with the user's OS scheduling solution, 
+  # but currently the first run could take roughtly 4 days to finish
   days.worth.of.seconds <- 86400
   if(as.double(difftime(query.time.end.daily,query.time.begin.daily, tz,units ="secs"))<days.worth.of.seconds){
     Sys.Sleep(days.worth.of.seconds-as.double(difftime( query.time.end.daily,query.time.begin.daily, tz,units ="secs")))
