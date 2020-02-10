@@ -154,7 +154,7 @@ get.closed.markets <- function(){
                                     )"
       )
     )
-    RSQLite::dbClearResult(reslts)
+    RSQLite::dbClearResult(results)
     results <- RSQLite::dbSendQuery(conn=db,
                                     paste0(
                                       "CREATE TABLE market_id_null ( 
