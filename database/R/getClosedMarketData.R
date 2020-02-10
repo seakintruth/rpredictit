@@ -1,4 +1,8 @@
 pacman::p_load(rpredictit, DBI, RSQLite, png)
+
+project.dir <- file.path("/cloud","project","predictit")
+
+
 # If we do decied to normalize the tables in the RSQLite database we will need:
 # should build out a normalized schema, could use: https://dbdiagram.io/d
 # pacman::p_load(uuid)
@@ -78,7 +82,7 @@ get.closed.market.info <- function(closed.markets,db){
   # rather than using a lapply here a for loop is used in this process as we NEVER want to parallize
   for (market.id in seq_along(closed.markets)){
     query.time.begin <- Sys.time()
-    message("gettng market: ",closed.markets[market.id])
+    message("getting market: ",closed.markets[market.id])
     get.url <- paste0(
       "https://www.predictit.org/api/marketdata/markets/",
       closed.markets[market.id]
@@ -120,7 +124,6 @@ get.closed.markets <- function(){
   # all markets are updated every 60 seconds...
   # so for a history we would need to capture a new timestamp's worth of data every minute...
   # If I was to do this then I need to normalize the data into a table RSQLlight?
-  project.dir <- file.path("/media","jeremy","250GbUsb","data","r","predictit")
   # may need for streaming annalysis?
   # pacman::p_load(stream)
   db = DBI::dbConnect(
@@ -138,20 +141,20 @@ get.closed.markets <- function(){
       conn=db,
       paste0(
         "CREATE TABLE market_observations (", 
-          marketObservationColumns,",",
-          "PRIMARY KEY (timeStamp, id, contract_id)
+        marketObservationColumns,",",
+        "PRIMARY KEY (timeStamp, id, contract_id)
         )"
       )
     )
     RSQLite::dbClearResult(results)
     results <- RSQLite::dbSendQuery(conn=db,
-      paste0(
-        "CREATE TABLE image ( 
+                                    paste0(
+                                      "CREATE TABLE image ( 
           imageUrl TEXT,
           image BLOB,
           PRIMARY KEY (imageUrl)
         )"
-      )
+                                    )
     )
     RSQLite::dbClearResult(results)
     results <- RSQLite::dbSendQuery(
