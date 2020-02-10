@@ -1,5 +1,5 @@
 pacman::p_load(RSQLite, DBI)
-project.dir <- file.path("/media","jeremy","250GbUsb","data","r","predictit")
+project.dir <- file.path("/cloud","project","predictit")
 
 readClosedMarketDataFromDb <- function(){
   db = DBI::dbConnect(
@@ -43,5 +43,5 @@ readNullIdMarketDataFromDb <- function(){
   null.id.data <-RSQLite::dbFetch(null.id.result)
   dbClearResult(null.id.result)
   RSQLite::dbDisconnect(db)
-  return(null.id.result)
+  return(null.id.data)
 }
