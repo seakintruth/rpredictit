@@ -39,15 +39,15 @@ wait.for.site.maintanence <- function(http.response, check.url){
   repeat{
     if (!is.null(trading.suspended) ){
       message("API Warning: Trying again in a minute. ",trading.suspended)
-      if(as.double(difftime(query.time.end, query.time.begin, tz, units ="secs"))<60){
-        Sys.Sleep(60-as.double(difftime(query.time.end, query.time.begin, tz, units ="secs")))
-      }
+      # we just made a call so wait a minute
       query.time.begin <- Sys.time()
       http.response <- httr::GET(check.url)
       # handle a site maintenance message:
       trading.suspended <- http.response$headers$`pi-tradingsuspendedmessage`
       query.time.end <- Sys.time()
+      sleep.a.minute(query.time.end, query.time.begin)
     } else {
+      message("Status:Site's back online, resuming get closed markets")
       break
     }  
   }
@@ -76,12 +76,6 @@ sleep.a.minute <-function(time.begin = NULL, time.end = NULL){
 get.closed.market.info <- function(closed.markets,db){
   # rather than using a lapply here a for loop is used in this process as we NEVER want to parallize
   for (market.id in seq_along(closed.markets)){
-    # we just made a call so wait a minute
-    if (exists("query.time.end")) {
-      sleep.a.minute(query.time.end, query.time.begin)
-    } else {
-      sleep.a.minute()
-    }
     query.time.begin <- Sys.time()
     message("gettng market: ",closed.markets[market.id])
     get.url <- paste0(
@@ -111,6 +105,8 @@ get.closed.market.info <- function(closed.markets,db){
       )
     }
     query.time.end <- Sys.time()
+    # we just made a call so wait a minute
+    sleep.a.minute(query.time.end, query.time.begin)
   }
   DBI::dbDisconnect(result)
 }
