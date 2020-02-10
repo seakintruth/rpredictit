@@ -132,7 +132,7 @@ get.closed.markets <- function(){
   existing.tables <- DBI::dbListTables(db)
   all.market.data.now <- rpredictit::all_markets()
   #get all closed markets:
-  closed.markets <- setdiff(seq(1100,max(all.market.data.now$id)),all.market.data.now$id)
+  closed.markets <- setdiff(seq(1220,max(all.market.data.now$id)),all.market.data.now$id)
   if(length(existing.tables)==0 ){
     # Create the base tables
     # SQL documentation: https://www.sqlite.org/lang.html
