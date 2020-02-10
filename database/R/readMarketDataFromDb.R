@@ -1,4 +1,4 @@
-pacman::p_load(RSQLite)
+pacman::p_load(RSQLite, DBI)
 project.dir <- file.path("/media","jeremy","250GbUsb","data","r","predictit")
 
 readClosedMarketDataFromDb <- function(){
