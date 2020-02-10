@@ -10,28 +10,30 @@ pacman::p_load(rpredictit, DBI, RSQLite, png)
 # pacman::p_load(devtoools)
 # devtools::install_github('seakintruth/rpredictit')
 
-marketObservationColumns <- ("
-                             timeStamp DATETIME,
-                             id INTEGER,
-                             name TEXT,
-                             shortName TEXT,
-                             image TEXT,
-                             url TEXT,
-                             status TEXT,
-                             contract_id INTEGER,
-                             dateEnd DATETIME,
-                             contract_image TEXT,
-                             contract_name TEXT,
-                             contract_shortName TEXT,
-                             contract_status TEXT,
-                             lastTradePrice DOUBLE,
-                             bestBuyYesCost DOUBLE,
-                             bestBuyNoCost DOUBLE,
-                             bestSellYesCost DOUBLE,
-                             bestSellNoCost DOUBLE,
-                             lastClosePrice DOUBLE,
-                             displayOrder INTEGER,
-                             ")
+marketObservationColumns <- (
+  "
+  timeStamp DATETIME,
+  id INTEGER,
+  name TEXT,
+  shortName TEXT,
+  image TEXT,
+  url TEXT,
+  status TEXT,
+  contract_id INTEGER,
+  dateEnd DATETIME,
+  contract_image TEXT,
+  contract_name TEXT,
+  contract_shortName TEXT,
+  contract_status TEXT,
+  lastTradePrice DOUBLE,
+  bestBuyYesCost DOUBLE,
+  bestBuyNoCost DOUBLE,
+  bestSellYesCost DOUBLE,
+  bestSellNoCost DOUBLE,
+  lastClosePrice DOUBLE,
+  displayOrder INTEGER
+  "
+)
 
 wait.for.site.maintanence <- function(http.response, check.url){
   # handle a site maintenance message:
@@ -122,8 +124,9 @@ get.closed.markets <- function(){
   project.dir <- file.path("/media","jeremy","250GbUsb","data","r","predictit")
   # may need for streaming annalysis?
   # pacman::p_load(stream)
-  db = DBI::dbConnect(RSQLite::SQLite(), 
-                      dbname=file.path(project.dir,"predictit.sqlite")
+  db = DBI::dbConnect(
+    RSQLite::SQLite(), 
+    dbname=file.path(project.dir,"predictit.sqlite")
   )
   existing.tables <- DBI::dbListTables(db)
   all.market.data.now <- rpredictit::all_markets()
@@ -132,31 +135,33 @@ get.closed.markets <- function(){
   if(length(existing.tables)==0 ){
     # Create the base tables
     # SQL documentation: https://www.sqlite.org/lang.html
-    results <- RSQLite::dbSendQuery(conn=db,
-                                    paste0(
-                                      "CREATE TABLE market_observations (", 
-                                      marketObservationColumns,
-                                      "PRIMARY KEY (timeStamp, id, contract_id)
-                                    )"
-      )
-                                    )
-    RSQLite::dbClearResult(results)
-    results <- RSQLite::dbSendQuery(conn=db,
-                                    paste0(
-                                      "CREATE TABLE image ( 
-                                      imageUrl TEXT,
-                                      image BLOB,
-                                      PRIMARY KEY (imageUrl)
-                                    )"
+    results <- RSQLite::dbSendQuery(
+      conn=db,
+      paste0(
+        "CREATE TABLE market_observations (", 
+          marketObservationColumns,",",
+          "PRIMARY KEY (timeStamp, id, contract_id)
+        )"
       )
     )
     RSQLite::dbClearResult(results)
     results <- RSQLite::dbSendQuery(conn=db,
-                                    paste0(
-                                      "CREATE TABLE market_id_null ( 
-                                      id INTEGER,
-                                      PRIMARY KEY (id)
-                                    )"
+      paste0(
+        "CREATE TABLE image ( 
+          imageUrl TEXT,
+          image BLOB,
+          PRIMARY KEY (imageUrl)
+        )"
+      )
+    )
+    RSQLite::dbClearResult(results)
+    results <- RSQLite::dbSendQuery(
+      conn=db,
+      paste0(
+        "CREATE TABLE market_id_null ( 
+          id INTEGER,
+          PRIMARY KEY (id)
+        )"
       )
     )
     RSQLite::dbClearResult(results)
