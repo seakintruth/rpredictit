@@ -49,7 +49,6 @@ wait.for.site.maintanence <- function(http.response, check.url){
       query.time.end <- Sys.time()
       sleep.a.minute(query.time.end, query.time.begin)
     } else {
-      message("Status:Site's back online, resuming get closed markets")
       break
     }  
   }
@@ -181,7 +180,6 @@ get.closed.markets <- function(){
     # get all closed markets that we don't yet have and that we tried, but returned NULL contents
     closed.markets <- base::setdiff(closed.markets,union(unlist(existing.closed.data),unlist(null.id.data)))
   }
-  
   get.closed.market.info(closed.markets, db)
   get.images(db)
   RSQLite::dbDisconnect(db)
