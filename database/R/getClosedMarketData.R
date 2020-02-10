@@ -11,27 +11,27 @@ pacman::p_load(rpredictit, DBI, RSQLite, png)
 # devtools::install_github('seakintruth/rpredictit')
 
 marketObservationColumns <- ("
-  timeStamp DATETIME,
-  id INTEGER,
-  name TEXT,
-  shortName TEXT,
-  image TEXT,
-  url TEXT,
-  status TEXT,
-  contract_id INTEGER,
-  dateEnd DATETIME,
-  contract_image TEXT,
-  contract_name TEXT,
-  contract_shortName TEXT,
-  contract_status TEXT,
-  lastTradePrice DOUBLE,
-  bestBuyYesCost DOUBLE,
-  bestBuyNoCost DOUBLE,
-  bestSellYesCost DOUBLE,
-  bestSellNoCost DOUBLE,
-  lastClosePrice DOUBLE,
-  displayOrder INTEGER,
-")
+                             timeStamp DATETIME,
+                             id INTEGER,
+                             name TEXT,
+                             shortName TEXT,
+                             image TEXT,
+                             url TEXT,
+                             status TEXT,
+                             contract_id INTEGER,
+                             dateEnd DATETIME,
+                             contract_image TEXT,
+                             contract_name TEXT,
+                             contract_shortName TEXT,
+                             contract_status TEXT,
+                             lastTradePrice DOUBLE,
+                             bestBuyYesCost DOUBLE,
+                             bestBuyNoCost DOUBLE,
+                             bestSellYesCost DOUBLE,
+                             bestSellNoCost DOUBLE,
+                             lastClosePrice DOUBLE,
+                             displayOrder INTEGER,
+                             ")
 
 wait.for.site.maintanence <- function(http.response, check.url){
   # handle a site maintenance message:
@@ -96,7 +96,7 @@ get.closed.market.info <- function(closed.markets,db){
         results <- RSQLite::dbSendQuery(
           conn=db,
           paste0(
-            "INSERT INTO market_observations (id) ",
+            "INSERT INTO market_id_null (id) ",
             "VALUES (", closed.markets[market.id],")"
           )
         )
@@ -127,7 +127,7 @@ get.closed.markets <- function(){
   # may need for streaming annalysis?
   # pacman::p_load(stream)
   db = DBI::dbConnect(RSQLite::SQLite(), 
-    dbname=file.path(project.dir,"predictit.sqlite")
+                      dbname=file.path(project.dir,"predictit.sqlite")
   )
   existing.tables <- DBI::dbListTables(db)
   all.market.data.now <- rpredictit::all_markets()
@@ -137,30 +137,30 @@ get.closed.markets <- function(){
     # Create the base tables
     # SQL documentation: https://www.sqlite.org/lang.html
     results <- RSQLite::dbSendQuery(conn=db,
-      paste0(
-        "CREATE TABLE market_observations (", 
-        marketObservationColumns,
-        "PRIMARY KEY (timeStamp, id, contract_id)
-        )"
+                                    paste0(
+                                      "CREATE TABLE market_observations (", 
+                                      marketObservationColumns,
+                                      "PRIMARY KEY (timeStamp, id, contract_id)
+                                    )"
       )
-    )
+                                    )
     RSQLite::dbClearResult(results)
     results <- RSQLite::dbSendQuery(conn=db,
-      paste0(
-        "CREATE TABLE image ( 
-          imageUrl TEXT,
-          image BLOB,
-          PRIMARY KEY (imageUrl)
-        )"
+                                    paste0(
+                                      "CREATE TABLE image ( 
+                                      imageUrl TEXT,
+                                      image BLOB,
+                                      PRIMARY KEY (imageUrl)
+                                    )"
       )
     )
     RSQLite::dbClearResult(reslts)
     results <- RSQLite::dbSendQuery(conn=db,
-      paste0(
-        "CREATE TABLE market_id_null ( 
-          id INTEGER,
-          PRIMARY KEY (id)
-        )"
+                                    paste0(
+                                      "CREATE TABLE market_id_null ( 
+                                      id INTEGER,
+                                      PRIMARY KEY (id)
+                                    )"
       )
     )
     RSQLite::dbClearResult(results)
