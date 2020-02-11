@@ -1,7 +1,51 @@
 pacman::p_load(rpredictit, DBI, RSQLite, png)
 
-project.dir <- file.path("/cloud","project","predictit")
+scriptFileName <- function() {
+  # https://stackoverflow.com/a/32016824/2292993
+  cmdArgs = commandArgs(trailingOnly = FALSE)
+  needle = "--file="
+  match = grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript via command line
+    return(normalizePath(sub(needle, "", cmdArgs[match])))
+  } else {
+    ls_vars = ls(sys.frames()[[1]])
+    if ("fileName" %in% ls_vars) {
+      # Source'd via RStudio
+      return(normalizePath(sys.frames()[[1]]$fileName))
+    } else {
+      if (!is.null(sys.frames()[[1]]$ofile)) {
+        # Source'd via R console
+        return(normalizePath(sys.frames()[[1]]$ofile))
+      } else {
+        # RStudio Run Selection
+        # http://stackoverflow.com/a/35842176/2292993
+        pth = rstudioapi::getActiveDocumentContext()$path
+        if (pth!='') {
+          return(normalizePath(pth))
+        } else {
+          # RStudio Console
+          tryCatch({
+            pth = rstudioapi::getSourceEditorContext()$path
+            pth = normalizePath(pth)
+          }, error = function(e) {
+            # normalizePath('') issues warning/error
+            pth = ''
+          }
+          )
+          return(pth)
+        }
+      }
+    }
+  }
+}
 
+if (nchar(scriptFileName())==0){
+  message("WARNING:Unable to find script path automatically")
+  project.dir <- file.path("/cloud","project","predictit")
+}else{
+  project.dir <- dirname(scriptFileName())  
+}
 
 # If we do decied to normalize the tables in the RSQLite database we will need:
 # should build out a normalized schema, could use: https://dbdiagram.io/d
@@ -14,29 +58,33 @@ project.dir <- file.path("/cloud","project","predictit")
 # pacman::p_load(devtoools)
 # devtools::install_github('seakintruth/rpredictit')
 
+delaySeconds <- 7 
+# the api documentation requests calls be a minute apart, but from testing the slow down error message 
+# occus after the 10th call in a minute as of 02/11/2019 
+
 marketObservationColumns <- (
   "
-  timeStamp DATETIME,
-  id INTEGER,
-  name TEXT,
-  shortName TEXT,
-  image TEXT,
-  url TEXT,
-  status TEXT,
-  contract_id INTEGER,
-  dateEnd DATETIME,
-  contract_image TEXT,
-  contract_name TEXT,
-  contract_shortName TEXT,
-  contract_status TEXT,
-  lastTradePrice DOUBLE,
-  bestBuyYesCost DOUBLE,
-  bestBuyNoCost DOUBLE,
-  bestSellYesCost DOUBLE,
-  bestSellNoCost DOUBLE,
-  lastClosePrice DOUBLE,
-  displayOrder INTEGER
-  "
+    timeStamp DATETIME,
+    id INTEGER,
+    name TEXT,
+    shortName TEXT,
+    image TEXT,
+    url TEXT,
+    status TEXT,
+    contract_id INTEGER,
+    dateEnd DATETIME,
+    contract_image TEXT,
+    contract_name TEXT,
+    contract_shortName TEXT,
+    contract_status TEXT,
+    lastTradePrice DOUBLE,
+    bestBuyYesCost DOUBLE,
+    bestBuyNoCost DOUBLE,
+    bestSellYesCost DOUBLE,
+    bestSellNoCost DOUBLE,
+    lastClosePrice DOUBLE,
+    displayOrder INTEGER
+    "
 )
 
 wait.for.site.maintanence <- function(http.response, check.url){
@@ -70,10 +118,10 @@ site.returned.nothing<- function(http.response){
 
 sleep.a.minute <-function(time.begin = NULL, time.end = NULL){
   if (is.null(time.begin)|is.null(time.end)){
-    Sys.sleep(60)
+    Sys.sleep(delaySeconds)
   } else {
-    if(abs(as.double(difftime(time.begin, time.end, tz, units ="secs")))<60){
-      Sys.sleep(60-abs(as.double(difftime(time.begin, time.end, tz, units ="secs"))))
+    if(abs(as.double(difftime(time.begin, time.end, tz, units ="secs")))<delaySeconds){
+      Sys.sleep(delaySeconds-abs(as.double(difftime(time.begin, time.end, tz, units ="secs"))))
     }
   }
 }
@@ -121,7 +169,7 @@ get.images <- function(db){
 }
 
 get.closed.markets <- function(){
-  # all markets are updated every 60 seconds...
+  # all markets are updated every delaySeconds seconds...
   # so for a history we would need to capture a new timestamp's worth of data every minute...
   # If I was to do this then I need to normalize the data into a table RSQLlight?
   # may need for streaming annalysis?
@@ -150,10 +198,10 @@ get.closed.markets <- function(){
     results <- RSQLite::dbSendQuery(conn=db,
                                     paste0(
                                       "CREATE TABLE image ( 
-          imageUrl TEXT,
-          image BLOB,
-          PRIMARY KEY (imageUrl)
-        )"
+                                        imageUrl TEXT,
+                                        image BLOB,
+                                        PRIMARY KEY (imageUrl)
+                                      )"
                                     )
     )
     RSQLite::dbClearResult(results)
