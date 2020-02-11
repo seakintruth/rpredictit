@@ -161,7 +161,7 @@ get.closed.market.info <- function(closed.markets,db){
     # we just made a call so wait a minute
     sleep.a.minute(query.time.end, query.time.begin)
   }
-  DBI::dbDisconnect(result)
+  DBI::dbDisconnect(db)
 }
 
 get.images <- function(db){
@@ -181,7 +181,7 @@ get.closed.markets <- function(){
   existing.tables <- DBI::dbListTables(db)
   all.market.data.now <- rpredictit::all_markets()
   #get all closed markets:
-  closed.markets <- setdiff(seq(1220,max(all.market.data.now$id)),all.market.data.now$id)
+  closed.markets <- setdiff(seq(1,max(all.market.data.now$id)),all.market.data.now$id)
   if(length(existing.tables)==0 ){
     # Create the base tables
     # SQL documentation: https://www.sqlite.org/lang.html
@@ -248,6 +248,6 @@ repeat{
   # but currently the first run could take roughtly 4 days to finish
   days.worth.of.seconds <- 86400
   if(as.double(difftime(query.time.end.daily,query.time.begin.daily, tz,units ="secs"))<days.worth.of.seconds){
-    Sys.Sleep(days.worth.of.seconds-as.double(difftime( query.time.end.daily,query.time.begin.daily, tz,units ="secs")))
+    Sys.sleep(days.worth.of.seconds-as.double(difftime( query.time.end.daily,query.time.begin.daily, tz,units ="secs")))
   }
 }
