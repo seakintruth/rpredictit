@@ -43,7 +43,7 @@ scriptFileName <- function() {
 
 if (nchar(scriptFileName())==0){
   message("WARNING:Unable to find script path automatically")
-  project.dir <- file.path("/media","jeremy","250GbUsb","data","r","predictit")
+  project.dir <- file.path("/cloud","project","predictit")
 }else{
   project.dir <- dirname(scriptFileName())  
 }
