@@ -43,7 +43,7 @@ scriptFileName <- function() {
 
 if (nchar(scriptFileName())==0){
   message("WARNING:Unable to find script path automatically")
-  project.dir <- file.path("/cloud","project","predictit")
+  project.dir <- file.path("/media","jeremy","250GbUsb","data","r","predictit")
 }else{
   project.dir <- dirname(scriptFileName())  
 }
@@ -89,5 +89,9 @@ readNullIdMarketDataFromDb <- function(){
   null.id.data <-RSQLite::dbFetch(null.id.result)
   dbClearResult(null.id.result)
   RSQLite::dbDisconnect(db)
-  return(null.id.result)
+  return(null.id.data)
 }
+
+predictit.closed.results <- readClosedMarketDataFromDb()
+predictit.open.results <- readOpenMarketDataFromDb()
+predictit.null.results <- readNullIdMarketDataFromDb()
