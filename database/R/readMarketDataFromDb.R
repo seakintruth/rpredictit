@@ -1,4 +1,5 @@
 pacman::p_load(RSQLite, DBI)
+# build and view db with https://sqlitebrowser.org/
 
 scriptFileName <- function() {
   # http://stackoverflow.com/a/32016824/2292993
