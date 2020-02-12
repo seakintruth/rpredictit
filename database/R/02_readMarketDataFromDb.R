@@ -21,34 +21,36 @@ scriptFileName <- function() {
       } else {
         # RStudio Run Selection
         # http://stackoverflow.com/a/35842176/2292993
-        pth = rstudioapi::getActiveDocumentContext()$path
-        if (pth!='') {
-          return(normalizePath(pth))
-        } else {
-          # RStudio Console
-          tryCatch({
-            pth = rstudioapi::getSourceEditorContext()$path
-            pth = normalizePath(pth)
-          }, error = function(e) {
-            # normalizePath('') issues warning/error
-            pth = ''
+        if ("rstudioapi" %in% installed.packages()){
+          pth = rstudioapi::getActiveDocumentContext()$path
+          if (pth!='') {
+            return(normalizePath(pth))
+          } else {
+            # RStudio Console
+            tryCatch({
+              pth = rstudioapi::getSourceEditorContext()$path
+              pth = normalizePath(pth)
+            }, error = function(e) {
+              # normalizePath('') issues warning/error
+              pth = ''
+            }
+            )
+            return(pth)
           }
-          )
-          return(pth)
         }
       }
     }
   }
 }
 
-if (nchar(scriptFileName())==0){
+if (is.null(scriptFileName())){
   message("WARNING:Unable to find script path automatically")
-  project.dir <- file.path("/cloud","project","predictit")
+  project.dir <- file.path("/media","jeremy","250GbUsb","data","r","predictit")
 }else{
   project.dir <- dirname(scriptFileName())  
 }
 
-.open.predictit.db <- function(project.dir=dirname(scriptFileName())){
+.open.predictit.db <- function(){
   db <- DBI::dbConnect(
     RSQLite::SQLite(), 
     dbname=file.path(project.dir,"predictit.sqlite")
@@ -91,7 +93,3 @@ readNullIdMarketDataFromDb <- function(){
   RSQLite::dbDisconnect(db)
   return(null.id.data)
 }
-
-predictit.closed.results <- readClosedMarketDataFromDb()
-predictit.open.results <- readOpenMarketDataFromDb()
-predictit.null.results <- readNullIdMarketDataFromDb()
