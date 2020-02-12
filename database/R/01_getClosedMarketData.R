@@ -42,7 +42,7 @@ scriptFileName <- function() {
 
 if (nchar(scriptFileName())==0){
   message("WARNING:Unable to find script path automatically")
-  project.dir <- file.path("/cloud","project","predictit")
+  project.dir <- file.path("/media","jeremy","250GbUsb","data","r","predictit")
 }else{
   project.dir <- dirname(scriptFileName())  
 }
@@ -64,27 +64,27 @@ delaySeconds <- 7
 
 marketObservationColumns <- (
   "
-    timeStamp DATETIME,
-    id INTEGER,
-    name TEXT,
-    shortName TEXT,
-    image TEXT,
-    url TEXT,
-    status TEXT,
-    contract_id INTEGER,
-    dateEnd DATETIME,
-    contract_image TEXT,
-    contract_name TEXT,
-    contract_shortName TEXT,
-    contract_status TEXT,
-    lastTradePrice DOUBLE,
-    bestBuyYesCost DOUBLE,
-    bestBuyNoCost DOUBLE,
-    bestSellYesCost DOUBLE,
-    bestSellNoCost DOUBLE,
-    lastClosePrice DOUBLE,
-    displayOrder INTEGER
-    "
+  timeStamp DATETIME,
+  id INTEGER,
+  name TEXT,
+  shortName TEXT,
+  image TEXT,
+  url TEXT,
+  status TEXT,
+  contract_id INTEGER,
+  dateEnd DATETIME,
+  contract_image TEXT,
+  contract_name TEXT,
+  contract_shortName TEXT,
+  contract_status TEXT,
+  lastTradePrice DOUBLE,
+  bestBuyYesCost DOUBLE,
+  bestBuyNoCost DOUBLE,
+  bestSellYesCost DOUBLE,
+  bestSellNoCost DOUBLE,
+  lastClosePrice DOUBLE,
+  displayOrder INTEGER
+  "
 )
 
 wait.for.site.maintanence <- function(http.response, check.url){
@@ -161,7 +161,6 @@ get.closed.market.info <- function(closed.markets,db){
     # we just made a call so wait a minute
     sleep.a.minute(query.time.end, query.time.begin)
   }
-  DBI::dbDisconnect(db)
 }
 
 get.images <- function(db){
@@ -182,54 +181,67 @@ get.closed.markets <- function(){
   all.market.data.now <- rpredictit::all_markets()
   #get all closed markets:
   closed.markets <- setdiff(seq(1,max(all.market.data.now$id)),all.market.data.now$id)
+  .dbSendQueryClear<-function(sql.statement){
+    results <- RSQLite::dbSendQuery(
+      conn=db,
+      sql.statement
+    )
+    RSQLite::dbClearResult(results)
+    return(NULL)
+  }
+  .dbSendQueryFetch<-function(sql.statement){
+    sql.result <- RSQLite::dbSendQuery(
+      conn=db,
+      sql.statement
+    )
+    fetch.data <-RSQLite::dbFetch(sql.result)
+    dbClearResult(sql.result)
+    return(fetch.data)
+  }
   if(length(existing.tables)==0 ){
     # Create the base tables
     # SQL documentation: https://www.sqlite.org/lang.html
-    results <- RSQLite::dbSendQuery(
-      conn=db,
+    query.statements <- c(
       paste0(
         "CREATE TABLE market_observations (", 
         marketObservationColumns,",",
         "PRIMARY KEY (timeStamp, id, contract_id)
         )"
-      )
-    )
-    RSQLite::dbClearResult(results)
-    results <- RSQLite::dbSendQuery(conn=db,
-                                    paste0(
-                                      "CREATE TABLE image ( 
-                                        imageUrl TEXT,
-                                        image BLOB,
-                                        PRIMARY KEY (imageUrl)
-                                      )"
-                                    )
-    )
-    RSQLite::dbClearResult(results)
-    results <- RSQLite::dbSendQuery(
-      conn=db,
-      paste0(
-        "CREATE TABLE market_id_null ( 
-          id INTEGER,
-          PRIMARY KEY (id)
+      ),
+        "CREATE TABLE image ( 
+          imageUrl TEXT,
+          image BLOB,
+          PRIMARY KEY (imageUrl)
         )"
-      )
+      ,
+      "CREATE TABLE market_id_null ( 
+        id INTEGER,
+        PRIMARY KEY (id)
+      )"
     )
-    RSQLite::dbClearResult(results)
+    base::lapply(query.statements,FUN=.dbSendQueryClear)
+    # Create indexes
+    query.statements <- c(
+        "CREATE UNIQUE INDEX `contract_id_index` ON `market_observations` (
+	        `contract_id`	ASC
+        );"
+      ,
+      "CREATE UNIQUE INDEX `image_id_index` ON `image` (
+        `imageUrl`	ASC
+      );",
+      "CREATE UNIQUE INDEX `null_id_index` ON `market_id_null` (
+	      `id` ASC
+      );"
+    )
+    base::lapply(query.statements,FUN=.dbSendQueryClear)
   } else {
-    existing.closed.result <- RSQLite::dbSendQuery(
-      conn=db,
-      "SELECT DISTINCT id FROM market_observations WHERE Status LIKE 'Closed'"
-    )
-    existing.closed.data <-RSQLite::dbFetch(existing.closed.result)
-    dbClearResult(existing.closed.result)
-    null.id.result <- RSQLite::dbSendQuery(
-      conn=db,
-      "SELECT DISTINCT id FROM market_id_null"
-    )
-    null.id.data <-RSQLite::dbFetch(null.id.result)
-    dbClearResult(null.id.result)
+    existing.closed.data <- .dbSendQueryFetch("SELECT DISTINCT id FROM market_observations WHERE Status LIKE 'Closed'")
+    null.id.data <- .dbSendQueryFetch("SELECT DISTINCT id FROM market_id_null")
     # get all closed markets that we don't yet have and that we tried, but returned NULL contents
     closed.markets <- base::setdiff(closed.markets,union(unlist(existing.closed.data),unlist(null.id.data)))
+  }
+  if(length(closed.markets)==0){
+    message("No newly closed markets exist")
   }
   get.closed.market.info(closed.markets, db)
   get.images(db)
@@ -242,10 +254,12 @@ repeat{
   # Repeat forever, getting the new content
   get.closed.markets()
   query.time.end.daily <- Sys.time()
+  break # use a script instead of running every day!
   
   # Delay one day between each call
   # Note: Should probably schedule this script to run daily with the user's OS scheduling solution, 
   # but currently the first run could take roughtly 4 days to finish
+  message("search complete, waiting a day.")
   days.worth.of.seconds <- 86400
   if(as.double(difftime(query.time.end.daily,query.time.begin.daily, tz,units ="secs"))<days.worth.of.seconds){
     Sys.sleep(days.worth.of.seconds-as.double(difftime( query.time.end.daily,query.time.begin.daily, tz,units ="secs")))
