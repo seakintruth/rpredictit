@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-$R_HOME/bin/Rscript "$DIR/getClosedMarketData.R"
+$R_HOME/bin/Rscript "$DIR/01_getClosedMarketData.R"
