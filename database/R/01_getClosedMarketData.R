@@ -83,7 +83,8 @@ marketObservationColumns <- (
   bestSellYesCost DOUBLE,
   bestSellNoCost DOUBLE,
   lastClosePrice DOUBLE,
-  displayOrder INTEGER
+  displayOrder INTEGER,
+  querySource INTEGER
   "
 )
 
@@ -144,14 +145,15 @@ get.closed.market.info <- function(closed.markets,db){
           conn=db,
           paste0(
             "INSERT INTO market_id_null (id) ",
-            "VALUES (", closed.markets[market.id],")"
+            "VALUES (", closed.markets[market.id], ");"
           )
         )
       )
       dbClearResult(results)
     } else{
       this.market <- rpredictit::single_market(closed.markets[market.id])
-      insert.fields <- colnames(this.market)
+      this.market[["querySource"]] <- rep(1,length(unlist(this.market[1])))
+      insert.fields <- c(colnames(this.market),"querySource")
       message("attempting to query id:",closed.markets[market.id])
       error.checking <- try(
         result <- DBI::dbAppendTable(conn=db,"market_observations",this.market)
@@ -205,7 +207,7 @@ get.closed.markets <- function(){
       paste0(
         "CREATE TABLE market_observations (", 
         marketObservationColumns,",",
-        "PRIMARY KEY (timeStamp, id, contract_id)
+        "PRIMARY KEY (timeStamp, id, contract_id, querySource)
         )"
       ),
         "CREATE TABLE image ( 
@@ -218,9 +220,15 @@ get.closed.markets <- function(){
         id INTEGER,
         PRIMARY KEY (id)
       )"
+      ,
+      "CREATE TABLE lookup_querySource ( 
+        id INTEGER,
+        Name,
+        PRIMARY KEY (id)
+      )"
     )
     base::lapply(query.statements,FUN=.dbSendQueryClear)
-    # Create indexes
+    # Create indexes, and insert lookup_querySource rows
     query.statements <- c(
         "CREATE UNIQUE INDEX `contract_id_index` ON `market_observations` (
 	        `contract_id`	ASC
@@ -231,7 +239,17 @@ get.closed.markets <- function(){
       );",
       "CREATE UNIQUE INDEX `null_id_index` ON `market_id_null` (
 	      `id` ASC
-      );"
+      );",
+      "CREATE UNIQUE INDEX `id_index` ON `lookup_querySource` (
+	      `id` ASC
+      );",
+      "
+      INSERT INTO lookup_querySource (id,Name)
+      VALUES (1,'MarketData by market ID');
+      VALUES (2,'GetMarketChartData;Last 24 Hours');
+      VALUES (3,'GetMarketChartData;Last 7 Days');
+      VALUES (4,'MarketDataAll');
+      "
     )
     base::lapply(query.statements,FUN=.dbSendQueryClear)
   } else {
