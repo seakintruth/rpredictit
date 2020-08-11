@@ -12,7 +12,7 @@ You may install the stable version from CRAN, or the development version using *
 install.packages('rpredictit')
 
 # or the development version, via devtools
-devtools::install_github('danielkovtun/rpredictit')
+devtools::install_github('seakintruth/rpredictit') # a fork (with a dataset) from 'danielkovtun/rpredictit'
 ```
 
 ## Usage
